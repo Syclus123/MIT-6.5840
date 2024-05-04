@@ -5,7 +5,7 @@ import "net"
 import "os"
 import "net/rpc"
 import "net/http"
-
+// import "fmt"
 /*
 coordinator任务总结：
 1、需要响应worker的请求，向其分配 Task，并记录信息
@@ -18,8 +18,8 @@ type Coordinator struct {
 	// Your definitions here.
 	// task Task 随便测试task
 	State int //任务状态 0 初始 1 Map 2 Reduce
-	NumMapWorkers int
-	NumReduceWorkers int
+	// NumMapWorkers int
+	// NumReduceWorkers int
 	//必须是一个线程安全的队列，因为多个worker会从中取任务，所以用channel去做
 	MapTask chan Task 
 	ReduceTask chan Task
@@ -35,6 +35,11 @@ type Coordinator struct {
 type Task struct {
 	FileName string
 	// State int //0 开始 1 运行 2 结束
+	// Id int //每个worker拿到一个任务id
+	//出于严谨，区分两个处理阶段的id
+	IdMap int
+	IdReduce int
+
 }
 
 // Your code here -- RPC handlers for the worker to call.
@@ -51,16 +56,34 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 
 func (c *Coordinator) GetTask(args *TaskRequest, reply *TaskResponse) error {
 	// reply.Name = c.task.name
-	if c.State == 0 {
+	if len(c.MapTaskFinish) !=c.NumMapTask {
+		// fmt.Printf(">>>>>> map task,%d %d %d\n",len(c.MapTaskFinish),c.NumMapTask,len(c.MapTask))
 		maptask,ok := <-c.MapTask
 		if ok {
-			reply.FileName = maptask.FileName
-			reply.NumMapWorkers = c.NumMapWorkers
+			reply.XTask = maptask
+			// reply.NumMapWorkers = c.NumMapWorkers
 		}
-	}else if c.State == 1 {
-		//等全部Mapworker工作结束后执行
+	} else { // 如果get不成功说明已经get完了
+		// fmt.Printf(">>>>>> reduce task\n")
+		reducetask, ok := <-c.ReduceTask //去Reduce里get
+		if ok {
+			reply.XTask = reducetask
+		}
 	}
+	reply.NumMapTask = c.NumMapTask 
+	reply.NumReduceTask = c.NumReduceTask
+	// reply.MapTaskFinish = c.MapTaskFinish
+	// reply.ReduceTaskFinish = c.ReduceTaskFinish
 
+	return nil
+}
+//task结束调用RPC发true
+func (c *Coordinator) TaskFin(args *ExampleArgs, reply *ExampleReply) error {
+	if len(c.MapTaskFinish) != c.NumMapTask { //map任务结束
+		c.MapTaskFinish <- true
+	} else { //Reduce task结束
+		c.ReduceTaskFinish <- true
+	}
 	return nil
 }
 
@@ -87,6 +110,9 @@ func (c *Coordinator) server() { //c是coordinator的引用
 func (c *Coordinator) Done() bool { //用于确定所有任务（map/reduce）是否完成
 	ret := false
 
+	if len(c.ReduceTaskFinish) == c.NumReduceTask {
+		ret = true
+	}
 	// Your code here.
 
 
@@ -103,8 +129,8 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{
 		//因为默认是无缓存channel，管道中不消费就没法读,所以考虑提前给初始长度
 		State: 0,
-		NumMapWorkers: 3,
-		NumReduceWorkers: nReduce,
+		// NumMapWorkers: 3,
+		// NumReduceWorkers: nReduce,
 		NumMapTask: len(files),
 		NumReduceTask: nReduce,
 		MapTask: make(chan Task,len(files)),
@@ -114,10 +140,13 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 
 	//	需要初始化coordinator来分配任务等
 	// Your code here.
-	for _, file := range files {
-		c.MapTask <- Task{FileName: file}
+	for id, file := range files {
+		c.MapTask <- Task{FileName: file,IdMap: id}
 	}
+	for i := 0;i < nReduce;i++{
+		c.ReduceTask <- Task{IdReduce: i}
 
+	}
 	c.server() //启动coordinator的RPC服务器接受工作节点调用
 	return &c
 }

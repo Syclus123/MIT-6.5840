@@ -30,11 +30,33 @@ type TaskRequest struct {
 }
 
 type TaskResponse struct {
-	FileName string //Map任务下存在
-	NumMapWorkers int
-	NumReduceWorkers int
-
+	// FileName string //Map任务下存在
+	// NumMapWorkers int
+	// NumReduceWorkers int
+	XTask Task //未知task
+	NumMapTask int //存入文件时要获取X数量
+	NumReduceTask int
+	Id int 
+	MapTaskFinish chan bool //告知worker已做完map
+	ReduceTaskFinish chan bool
 }
+
+// type TaskFinRequest struct {
+// 	X int
+// }
+
+// type TaskFinResponse struct {
+// 	// FileName string //Map任务下存在
+// 	// NumMapWorkers int
+// 	// NumReduceWorkers int
+// 	XTask Task //未知task
+// 	NumMapTask int //存入文件时要获取X数量
+// 	NumReduceTask int
+// 	Id int 
+// 	MapTaskFinish chan bool //告知worker已做完map
+// 	ReduceTaskFinish chan bool
+// }
+
 
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp, for the coordinator.
