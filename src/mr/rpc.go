@@ -24,6 +24,17 @@ type ExampleReply struct {
 
 // Add your RPC definitions here.
 
+//获取任务请求结构
+type TaskRequest struct {
+	X int
+}
+
+type TaskResponse struct {
+	FileName string //Map任务下存在
+	NumMapWorkers int
+	NumReduceWorkers int
+
+}
 
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp, for the coordinator.
