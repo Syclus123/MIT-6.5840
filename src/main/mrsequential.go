@@ -27,7 +27,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Usage: mrsequential xxx.so inputfiles...\n")
 		os.Exit(1)
 	}
-
+	// 加载插件
 	mapf, reducef := loadPlugin(os.Args[1])
 
 	//
@@ -35,8 +35,8 @@ func main() {
 	// pass it to Map,
 	// accumulate the intermediate Map output.
 	//
-	intermediate := []mr.KeyValue{}
-	for _, filename := range os.Args[2:] {
+	intermediate := []mr.KeyValue{} //定义中间结果
+	for _, filename := range os.Args[2:] { // 读取所有文件
 		file, err := os.Open(filename)
 		if err != nil {
 			log.Fatalf("cannot open %v", filename)
@@ -46,7 +46,7 @@ func main() {
 			log.Fatalf("cannot read %v", filename)
 		}
 		file.Close()
-		kva := mapf(filename, string(content))
+		kva := mapf(filename, string(content)) //用map函数处理所有文件内容，生成中间结果kv对
 		intermediate = append(intermediate, kva...)
 	}
 
@@ -56,7 +56,7 @@ func main() {
 	// rather than being partitioned into NxM buckets.
 	//
 
-	sort.Sort(ByKey(intermediate))
+	sort.Sort(ByKey(intermediate)) //键值对排序
 
 	oname := "mr-out-0"
 	ofile, _ := os.Create(oname)
@@ -86,10 +86,8 @@ func main() {
 	ofile.Close()
 }
 
-//
 // load the application Map and Reduce functions
 // from a plugin file, e.g. ../mrapps/wc.so
-//
 func loadPlugin(filename string) (func(string, string) []mr.KeyValue, func(string, []string) string) {
 	p, err := plugin.Open(filename)
 	if err != nil {

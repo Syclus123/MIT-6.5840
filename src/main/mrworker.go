@@ -26,17 +26,15 @@ func main() {
 
 	mr.Worker(mapf, reducef)
 }
-
-//
+//从插件中加载map reduce
 // load the application Map and Reduce functions
 // from a plugin file, e.g. ../mrapps/wc.so
-//
-func loadPlugin(filename string) (func(string, string) []mr.KeyValue, func(string, []string) string) {
-	p, err := plugin.Open(filename)
+func loadPlugin(filename string) (func(string, string) []mr.KeyValue, func(string, []string) string) {// 返回map、reduce两个函数类型
+	p, err := plugin.Open(filename) //插件加载
 	if err != nil {
 		log.Fatalf("cannot load plugin %v", filename)
 	}
-	xmapf, err := p.Lookup("Map")
+	xmapf, err := p.Lookup("Map") //插件中查找map函数
 	if err != nil {
 		log.Fatalf("cannot find Map in %v", filename)
 	}

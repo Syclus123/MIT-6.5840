@@ -252,7 +252,7 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 //统计map中有多少任务已经完成
 func lenTaskFin(m *sync.Map) int { // 要保证map的线程安全所以用线程map
 	var i int //已完成任务数
-	m.Range(func(k,v interface{}) bool { //v为Timestamp类型
+	m.Range(func(k,v interface{}) bool { // v为Timestamp类型
 		if v.(TimeStamp).Fin {
 			i++
 		}

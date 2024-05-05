@@ -51,7 +51,7 @@ func ihash(key string) int { //确定给定键后应该被分配到哪个Reduce�
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
-	//应将中间map输出存放到当前目录下的文件中方便作为Reduce任务的输入来读取
+	//应将中间map输出存放到当前目录下的文件中方便作为Reduce任务输入来读取
 	// Your worker implementation here.
 
 	// uncomment to send the Example RPC to the coordinator.
@@ -122,8 +122,8 @@ func Worker(mapf func(string, string) []KeyValue,
 				}
 				tmp_file.Close()
 				out_file := "mr-" + id + "-" + strconv.Itoa(i)
-				os.Rename(tmp_file.Name(),out_file) //临时文件重命名为最终文件(原始remove函数有bug)
-				// MoveFile(tmp_file.Name(),out_file)
+				// os.Rename(tmp_file.Name(),out_file) //临时文件重命名为最终文件(原始remove函数有bug)
+				MoveFile(tmp_file.Name(),out_file)
 				//原子重命名技巧参考MapReduce论文
 			}
 			//worker完成任务后需要返回信号 出bug
@@ -182,8 +182,8 @@ func Worker(mapf func(string, string) []KeyValue,
 				i = j
 			}
 			tmp_file.Close()
-			os.Rename(tmp_file.Name(),out_file) //临时文件重命名为最终文件
-			// MoveFile(tmp_file.Name(),out_file)
+			// os.Rename(tmp_file.Name(),out_file) //临时文件重命名为最终文件
+			MoveFile(tmp_file.Name(),out_file)
 			// reply.ReduceTaskFinish <- true
 			CallTaskFin(&reply.XTask) //调用RPC
 			// if len(reply.ReduceTaskFinish) == reply.NumReduceTask{
